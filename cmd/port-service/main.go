@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"github.com/evt/port-service/internal/config"
+	"github.com/evt/port-service/internal/services"
+	"github.com/evt/port-service/internal/transport"
 	"github.com/gorilla/mux"
 )
 
@@ -25,15 +26,15 @@ func run() error {
 	// read config from env
 	cfg := config.Read()
 
+	// create port service
+	portService := services.NewPortService()
+
+	// create http server with application injected
+	httpServer := transport.NewHttpServer(portService)
+
 	// create http router
 	router := mux.NewRouter()
-	router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]bool{
-			"pong": true,
-		})
-	}).Methods("GET")
+	router.HandleFunc("/port", httpServer.GetPort).Methods("GET")
 
 	srv := &http.Server{
 		Addr:    cfg.HTTPAddr,
