@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/evt/port-service/internal/config"
+	"github.com/evt/port-service/internal/repository/inmem"
 	"github.com/evt/port-service/internal/services"
 	"github.com/evt/port-service/internal/transport"
 	"github.com/gorilla/mux"
@@ -26,8 +27,11 @@ func run() error {
 	// read config from env
 	cfg := config.Read()
 
+	// create port repository
+	portStoreRepo := inmem.NewPortStore()
+
 	// create port service
-	portService := services.NewPortService()
+	portService := services.NewPortService(portStoreRepo)
 
 	// create http server with application injected
 	httpServer := transport.NewHttpServer(portService)
@@ -35,6 +39,8 @@ func run() error {
 	// create http router
 	router := mux.NewRouter()
 	router.HandleFunc("/port", httpServer.GetPort).Methods("GET")
+	router.HandleFunc("/count", httpServer.CountPorts).Methods("GET")
+	router.HandleFunc("/ports", httpServer.UploadPorts).Methods("POST")
 
 	srv := &http.Server{
 		Addr:    cfg.HTTPAddr,
