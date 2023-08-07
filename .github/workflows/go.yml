@@ -1,0 +1,29 @@
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build-and-test:
+    strategy:
+      matrix:
+        go: [1.19]
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+
+      - name: Build
+        run: go build -v cmd/port-service/*.go
+
+      - name: Test
+        run: go test -v ./...
